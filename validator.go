@@ -76,11 +76,16 @@ func validate(user, pass, group string) (userValid bool) {
 	}
 
 	userDN := lresult.Entries[0].DN
+	userID := userDN
+	if config.GroupUserAttr != "" {
+		lresult.Entries[0].GetAttributeValue(config.GroupUserAttr)
+	}
 	level.Debug(logger).Log("msg", "user found", "dn", userDN)
 
 	//lookup if the user is the member of the specific group
 	if group != "" {
-		filter = fmt.Sprintf(config.GroupFilter, ldap.EscapeFilter(userDN))
+		filter = fmt.Sprintf(config.GroupFilter, ldap.EscapeFilter(userID))
+		level.Debug(logger).Log("msg", "group search", "filter", filter)
 		lrequest = ldap.NewSearchRequest(config.GroupBaseDN,
 			ldap.ScopeWholeSubtree,
 			ldap.NeverDerefAliases,

@@ -11,6 +11,7 @@ type Config struct {
 	UserFilter                string
 	UserRequiredGroup         string
 	GroupBaseDN               string
+	GroupUserAttr             string
 	GroupAttr                 string
 	GroupFilter               string
 	BasicAuthRealm            string

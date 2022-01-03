@@ -32,6 +32,7 @@ func main() {
 	flag.StringVar(&config.UserFilter, "user-filter", "(cn=%s)", "filter for user search")
 	flag.StringVar(&config.UserRequiredGroup, "user-required-group", "", "default required group, if Header X-Http-Ldap-Authrequest-RequiredGroup is not set")
 	flag.StringVar(&config.GroupBaseDN, "group-base-dn", "", "search base for group search")
+	flag.StringVar(&config.GroupUserAttr, "group-user-attr", "", "identifies user in group membership, if not set, distinguished name is used")
 	flag.StringVar(&config.GroupAttr, "group-attr", "cn", "")
 	flag.StringVar(&config.GroupFilter, "group-filter", "(member=%s)", "filter for group search, the user is member of")
 	fRealm := flag.String("realm", "Restricted", "")
