@@ -11,7 +11,7 @@ import (
 
 func validate(user, pass, group string) (userValid bool) {
 	logger := log.With(logger, "user", user, "group", group)
-	level.Debug(logger).Log("msg", "will validate")
+	//level.Debug(logger).Log("msg", "will validate")
 	defer func() {
 		if userValid {
 			level.Info(logger).Log("msg", "user is authenticated")
@@ -50,6 +50,10 @@ func validate(user, pass, group string) (userValid bool) {
 
 	//user lookup
 	filter := fmt.Sprintf(config.UserFilter, ldap.EscapeFilter(user))
+	attrs := []string{"1.1"}
+	if config.GroupUserAttr != "" {
+		attrs = []string{config.GroupUserAttr}
+	}
 	lrequest := ldap.NewSearchRequest(config.UserBaseDN,
 		ldap.ScopeWholeSubtree,
 		ldap.NeverDerefAliases,
@@ -57,7 +61,7 @@ func validate(user, pass, group string) (userValid bool) {
 		0,
 		false,
 		filter,
-		[]string{"1.1"},
+		attrs,
 		nil)
 	lresult, err := l.Search(lrequest)
 	if err != nil {
@@ -78,13 +82,17 @@ func validate(user, pass, group string) (userValid bool) {
 	userDN := lresult.Entries[0].DN
 	userID := userDN
 	if config.GroupUserAttr != "" {
-		lresult.Entries[0].GetAttributeValue(config.GroupUserAttr)
+		userID = lresult.Entries[0].GetAttributeValue(config.GroupUserAttr)
 	}
 	level.Debug(logger).Log("msg", "user found", "dn", userDN)
 
 	//lookup if the user is the member of the specific group
 	if group != "" {
-		filter = fmt.Sprintf(config.GroupFilter, ldap.EscapeFilter(userID))
+		filter := fmt.Sprintf(config.GroupFilter, ldap.EscapeFilter(userID))
+		attrs := []string{"1.1"}
+		if config.GroupAttr != "" {
+			attrs = []string{config.GroupAttr}
+		}
 		level.Debug(logger).Log("msg", "group search", "filter", filter)
 		lrequest = ldap.NewSearchRequest(config.GroupBaseDN,
 			ldap.ScopeWholeSubtree,
@@ -93,7 +101,7 @@ func validate(user, pass, group string) (userValid bool) {
 			0,
 			false,
 			filter,
-			[]string{config.GroupAttr},
+			attrs,
 			nil)
 		lresult, err = l.Search(lrequest)
 		if err != nil {
@@ -103,7 +111,11 @@ func validate(user, pass, group string) (userValid bool) {
 
 		var groupMembershipConfirmed bool = false
 		for _, e := range lresult.Entries {
-			if e.GetAttributeValue(config.GroupAttr) == group {
+			groupID := e.DN
+			if config.GroupAttr != "" {
+				groupID = e.GetAttributeValue(config.GroupAttr)
+			}
+			if groupID == group {
 				groupMembershipConfirmed = true
 				break
 			}
